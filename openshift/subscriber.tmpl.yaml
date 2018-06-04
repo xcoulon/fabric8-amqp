@@ -1,0 +1,81 @@
+---
+apiVersion: v1
+kind: Template
+metadata:
+  name: subscriber
+parameters:
+  - name: SERVICE
+    description: "The name of the service"
+    value: service1
+  - name: TARGET_ADDRESSES
+    description: "The name of the target addresses to which messages are delivered"
+    value: service1
+  - name: REPLICA_COUNT
+    description: "The number of replicas of the service"
+    value: "1"
+objects:
+  - apiVersion: v1
+    kind: ImageStream
+    metadata:
+      name: ${SERVICE}
+  - apiVersion: v1
+    kind: DeploymentConfig
+    metadata:
+      name: ${SERVICE}
+    spec:
+      replicas: ${{REPLICA_COUNT}}
+      revisionHistoryLimit: 2
+      selector:
+        app: ${SERVICE}
+      strategy:
+        activeDeadlineSeconds: 21600
+        resources: {}
+        rollingParams:
+          intervalSeconds: 1
+          maxSurge: 25%
+          maxUnavailable: 25%
+          timeoutSeconds: 600
+          updatePeriodSeconds: 1
+        type: Rolling
+      template:
+        metadata:
+          labels:
+            app: "${SERVICE}"
+            type: "streaming"
+        spec:
+          containers:
+          - env:
+            - name: BROKER_URL
+              value: "amqp://activemq-artemis:61616"
+            - name: USERNAME
+              value: "admin"
+            - name: PASSWORD
+              value: "password"
+            - name: TARGET_ADDRESSES
+              value: ${TARGET_ADDRESSES}
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            image: 172.30.1.1:5000/fabric8/subscriber:latest
+            imagePullPolicy: Always
+            name: ${SERVICE}
+            resources: {}
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+      triggers:
+      - type: ConfigChange
+      - imageChangeParams:
+          automatic: true
+          containerNames:
+          - ${SERVICE}
+          from:
+            kind: ImageStreamTag
+            name: subscriber:latest
+            namespace: fabric8
+        type: ImageChange

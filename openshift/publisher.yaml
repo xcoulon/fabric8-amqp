@@ -1,0 +1,49 @@
+---
+apiVersion: v1
+kind: ImageStream
+metadata:
+  name: publisher
+---
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+  name: publisher
+spec:
+  template:
+    metadata:
+      labels:
+        app: publisher
+        type: "streaming"
+    spec:
+      containers:
+      - name: publisher
+        image: "publisher:latest"
+        env:
+        - name: BROKER_URL
+          value: "amqp://activemq-artemis:61616"
+        - name: USERNAME
+          value: "admin"
+        - name: PASSWORD
+          value: "password"
+        - name: TARGET_ADDRESSES
+          value: "addr1,addr2"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+  replicas: 1
+  triggers:
+    - type: "ConfigChange" 
+    - type: "ImageChange" 
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - "publisher"
+        from:
+          kind: "ImageStreamTag"
+          name: "publisher:latest"
+  strategy: 
+    type: "Rolling"
+  paused: false 
+  revisionHistoryLimit: 2 
+  minReadySeconds: 0

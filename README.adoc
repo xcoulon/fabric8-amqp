@@ -1,0 +1,105 @@
+= Fabric8-AMQP
+
+Playing with Apache ActiveMQ Artemis 2.6.0 on OpenShift/Minishift
+
+== Deploying Apache ActiveMQ Artemis
+
+First, the Docker image is built by downloading the Apache ActiveMQ Artemis archive and extracting it 
+
+```
+$ docker build -t fabric8/activemq-artemis:2.6.0 -f -f openshift/Dockerfile.activemq-artemis .
+$ oc apply -f openshift/activemq-artemis-deploy.yaml
+```
+
+== Building and deploying the publisher
+
+Each new version of the publisher is automatically deployed using an `ImageStream` and a `DeployConfig`.
+Building and deploying a new version of the publisher happens with (all at once!)
+
+```
+make deploy-publisher
+```
+
+== Building and deploying the subscribers
+
+All subscribers share the same code but are configured differently in their DeployConfig.
+
+To avoid repetition among the YAML files, both subscribers are created using the same OpenShift template:
+
+```
+# subscriber 1 with 0 replica 
+$ oc process -f openshift/subscriber.tmpl.yaml -p SERVICE=subscriber1 -p REPLICA_COUNT=0 -p TARGET_ADDRESSES=addr1 | oc apply -f -
+
+# subscriber 2 with 0 replica
+$ oc process -f openshift/subscriber.tmpl.yaml -p SERVICE=subscriber2 -p REPLICA_COUNT=0 -p TARGET_ADDRESSES=addr2 | oc apply -f -
+```
+
+The template used above creates both the `ImageStream` and the `DeployConfig` resources for each subscriber. Once this is done, a new version of the code can be deployed with
+
+```
+$ make deploy-subscribers
+```
+
+== Checking the results
+
+
+```
+# start the Apache ActiveMQ Artemis-server (previous replicas was set to '0')
+$ oc scale deploy/activemq-artemis --replicas=1
+deployment "activemq-artemis" scaled
+
+ 
+# start the publisher and subscribers (replica count was previously lowered to '0' to stop all publishing)
+$ oc scale dc/publisher dc/subscriber1 dc/subscriber2 --replicas=1
+deploymentconfig "publisher" scaled
+deploymentconfig "subscriber1" scaled
+deploymentconfig "subscriber2" scaled
+
+$ oc get pods
+NAME                                READY     STATUS              RESTARTS   AGE
+activemq-artemis-74888b57b4-vdvh9   1/1       Running             0          4h
+publisher-86-c7r4q                  1/1       Running             0          9m
+subscriber1-7-ghnvk                 1/1       Running             0          9m
+subscriber2-1-59bgm                 1/1       Running             0          8m
+
+# check the logs on the publisher
+$ oc logs publisher-86-c7r4q
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=publisher-86-c7r4q
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=publisher-86-c7r4q
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=publisher-86-c7r4q
+INFO[0003] preparing msg 'message #1                     id=publisher-86-c7r4q
+INFO[0003] publishing msg 'message #1'...                id=publisher-86-c7r4q
+INFO[0003] published msg 'message #1' to address 'addr1'  id=publisher-86-c7r4q
+INFO[0003] publishing msg 'message #1'...                id=publisher-86-c7r4q
+INFO[0003] published msg 'message #1' to address 'addr2'  id=publisher-86-c7r4q
+INFO[0006] preparing msg 'message #2                     id=publisher-86-c7r4q
+INFO[0006] publishing msg 'message #2'...                id=publisher-86-c7r4q
+INFO[0006] published msg 'message #2' to address 'addr1'  id=publisher-86-c7r4q
+INFO[0006] publishing msg 'message #2'...                id=publisher-86-c7r4q
+INFO[0006] published msg 'message #2' to address 'addr2'  id=publisher-86-c7r4q
+^C
+# check the logs on subscriber 2
+$ oc logs subscriber1-7-ghnvk
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber1-7-ghnvk
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber1-7-ghnvk
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber1-7-ghnvk
+INFO[0002] received msg: message #1                      id=subscriber1-7-ghnvk
+INFO[0005] received msg: message #2                      id=subscriber1-7-ghnvk
+^C
+
+# check the logs on subscriber 2
+$ oc logs subscriber2-1-59bgm
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber2-1-59bgm
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber2-1-59bgm
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber2-1-59bgm
+INFO[0000] received msg: message #1                      id=subscriber2-1-59bgm
+INFO[0003] received msg: message #2                      id=subscriber2-1-59bgm
+^C
+
+
+```
+
+
+=== Conclusion
+
+The publisher sent messages on 2 different addresses `addr1` and `addr2` and the 2 subscribers received the message, each on its address.

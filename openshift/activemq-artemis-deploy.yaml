@@ -1,0 +1,50 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: activemq-artemis
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: activemq-artemis
+    spec:
+      containers:
+      - name: activemq-artemis
+        image: "fabric8/activemq-artemis:2.6.0"
+        command: ["/bin/sh","-c"]
+        args: ["mkdir -p ${BROKER_DIR} && /apache-artemis/bin/artemis create --user=${ADMIN_USERNAME} --password=${ADMIN_PASSWORD} --allow-anonymous --http-host=0.0.0.0 ${BROKER_DIR} && ${BROKER_DIR}/bin/artemis run"]
+        env:
+        - name: BROKER_DIR
+          value: "/apache-artemis/data/fabric8-broker"
+        - name: USERNAME
+          value: "admin"
+        - name: PASSWORD
+          value: "password"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: activemq-artemis
+  name: activemq-artemis
+spec:
+  ports:
+  - name: all-protocols
+    port: 61616
+    protocol: TCP
+    targetPort: 61616
+    nodePort: 31616
+  - name: amqps
+    port: 5672
+    protocol: TCP
+    targetPort: 5672
+    nodePort: 31672
+  - name: mgmt
+    port: 8161
+    protocol: TCP
+    targetPort: 8161
+    nodePort: 31161
+  selector:
+    app: activemq-artemis
+  type: NodePort
