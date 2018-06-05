@@ -1,4 +1,4 @@
-= Fabric8-AMQP
+= Fabric8-AMQP - Test case 1
 
 Playing with Apache ActiveMQ Artemis 2.6.0 on OpenShift/Minishift
 
