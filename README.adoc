@@ -57,45 +57,60 @@ deploymentconfig "subscriber2" scaled
 
 $ oc get pods
 NAME                                READY     STATUS    RESTARTS   AGE
-activemq-artemis-74888b57b4-vdvh9   1/1       Running   0          18h
-publisher-87-mzwbw                  1/1       Running   0          5s
-subscriber1-7-r6szt                 1/1       Running   0          4s
-subscriber2-1-tczz8                 1/1       Running   0          3s
+activemq-artemis-8c96dbddb-7xdm2   1/1       Running   0          53m
+publisher-94-t9hpl                 1/1       Running   0          11s
+subscriber1-8-zbj5z                1/1       Running   0          10s
+subscriber2-3-894vq                1/1       Running   0          9s
 
 
 # check the logs on the publisher
-$ oc logs publisher-87-mzwbw
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=publisher-87-mzwbw
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=publisher-87-mzwbw
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=publisher-87-mzwbw
-INFO[0003] preparing msg 'message #1                     id=publisher-87-mzwbw
-INFO[0003] publishing msg 'message #1'...                id=publisher-87-mzwbw
-INFO[0003] published msg 'message #1' to address 'addr1'  id=publisher-87-mzwbw
-INFO[0003] published msg 'message #1' to address 'addr2'  id=publisher-87-mzwbw
+$ oc logs publisher-94-t9hpl
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=publisher-94-t9hpl
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=publisher-94-t9hpl
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=publisher-94-t9hpl
+INFO[0003] preparing msg 'message #1                     id=publisher-94-t9hpl
+INFO[0003] publishing msg 'message #1'...                id=publisher-94-t9hpl
+INFO[0003] published msg 'message #1' to address 'addr1'  id=publisher-94-t9hpl
+INFO[0003] published msg 'message #1' to address 'addr2'  id=publisher-94-t9hpl
 ...
-INFO[0030] preparing msg 'message #10                    id=publisher-87-mzwbw
-INFO[0030] publishing msg 'message #10'...               id=publisher-87-mzwbw
-INFO[0030] published msg 'message #10' to address 'addr1'  id=publisher-87-mzwbw
-INFO[0030] published msg 'message #10' to address 'addr2'  id=publisher-87-mzwbw 
 ^C
 
 # check the logs on subscriber 1
-$ oc logs subscriber1-7-ghnvk
+$ oc logs subscriber1-8-zbj5z
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber1-8-zbj5z
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber1-8-zbj5z
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber1-8-zbj5z
+INFO[0001] received msg: message #1                      id=subscriber1-8-zbj5z
+...
 ^C
 
 # check the logs on subscriber 2
-$ oc logs subscriber2-1-59bgm
-^C
-
-# kill subscriber 2, let OpenShift schedule another one
+$ oc logs subscriber2-3-894vq
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber2-3-894vq
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber2-3-894vq
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber2-3-894vq
+INFO[0001] received msg: message #1                      id=subscriber2-3-894vq
+INFO[0004] received msg: message #2                      id=subscriber2-3-894vq
+INFO[0007] received msg: message #3                      id=subscriber2-3-894vq
+INFO[0010] received msg: message #4                      id=subscriber2-3-894vq
+...
+# kill subscriber 2, let OpenShift schedule another pod
+...
+INFO[0029] received msg: message #117                    id=subscriber2-3-894vq
+INFO[0032] received msg: message #118                    id=subscriber2-3-894vq
+INFO[0035] received msg: message #119                    id=subscriber2-3-894vq
+rpc error: code = Unknown desc = Error: No such container: fabefd987b0e0d5ece90130239fabd464123b88b91e4b90abfbc9b3474ec6c6c
 
 # check the logs on "new" subscriber 2
-$ oc logs 
-
+$ oc logs subscriber2-3-dtwsz
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber2-3-dtwsz
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber2-3-dtwsz
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber2-3-dtwsz
+INFO[0000] received msg: message #120                    id=subscriber2-3-dtwsz
 
 ```
 
 
 === Conclusion
 
-The publisher sent messages on 2 different addresses `addr1` and `addr2` and the 2 subscribers received the message, each on its address.
+When the pod for the subscriber 2 was (hard) deleted, no message was lost.

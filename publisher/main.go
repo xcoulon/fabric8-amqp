@@ -41,13 +41,13 @@ func main() {
 			defer sender.Close(ctx)
 		}
 		for {
+			msg, ok := <-msgChan
+			if !ok {
+				log.Warnf("msg channel closed. Stopping the publish routine.")
+				runtime.Goexit()
+			}
+			log.Infof("publishing msg '%s'...", msg.GetData())
 			for _, sender := range senders {
-				msg, ok := <-msgChan
-				if !ok {
-					log.Warnf("msg channel closed. Stopping the publish routine.")
-					runtime.Goexit()
-				}
-				log.Infof("publishing msg '%s'...", msg.GetData())
 				err = sender.Send(ctx, &msg)
 				if err != nil {
 					log.Errorf("failed to publish msg '%s' to address '%s': %v", string(msg.GetData()), sender.Address(), err.Error())
