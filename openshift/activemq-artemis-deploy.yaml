@@ -12,15 +12,8 @@ spec:
       containers:
       - name: activemq-artemis
         image: "fabric8/activemq-artemis:2.6.0"
-        command: ["/bin/sh","-c"]
-        args: ["mkdir -p ${BROKER_DIR} && /apache-artemis/bin/artemis create --user=${ADMIN_USERNAME} --password=${ADMIN_PASSWORD} --allow-anonymous --http-host=0.0.0.0 ${BROKER_DIR} && ${BROKER_DIR}/bin/artemis run"]
-        env:
-        - name: BROKER_DIR
-          value: "/apache-artemis/data/fabric8-broker"
-        - name: USERNAME
-          value: "admin"
-        - name: PASSWORD
-          value: "password"
+        command: ["/var/lib/apache-artemis/data/fabric8-broker/bin/artemis"]
+        args: ["run"]
 ---
 apiVersion: v1
 kind: Service

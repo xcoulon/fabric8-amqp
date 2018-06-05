@@ -61,7 +61,7 @@ clean-artifacts:
 .PHONY: deploy-activemq-artemis
 deploy-activemq-artemis: ## builds and deploy the ActiveMQ Artemis service on Minishift
 	eval $$(minishift docker-env) && \
-	docker build -t fabric8/activemq-artemis:2.6.0 -f openshift/Dockerfile.activemq-artemis . && \
+	docker build -t fabric8/activemq-artemis:2.6.0 -f apache-artemis/Dockerfile . && \
 	eval $$(minishift docker-env) && docker login -u developer -p $(shell oc whoami -t) $(shell minishift openshift registry) && \
 	docker tag fabric8/activemq-artemis:2.6.0  $(MINISHIFT_REGISTRY)/$(MINISHIFT_PROJECT)/activemq-artemis:2.6.0 && \
 	docker push $(MINISHIFT_REGISTRY)/$(MINISHIFT_PROJECT)/activemq-artemis:2.6.0 && \
