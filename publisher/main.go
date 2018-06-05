@@ -31,23 +31,28 @@ func main() {
 	go func() {
 		// wait for a new message to arrive
 		targetAddresses := config.GetTargetAddresses()
-		for {
-			msg, ok := <-msgChan
-			if !ok {
-				log.Warnf("msg channel closed. Stopping the publish routine.")
-				runtime.Goexit()
+		senders := make([]*amqp.Sender, len(targetAddresses))
+		for i, addr := range targetAddresses {
+			sender, err := session.NewSender(amqp.LinkTargetAddress(addr))
+			if err != nil {
+				log.Fatalf("failed to create sender: %v", err)
 			}
-			log.Infof("publishing msg '%s'...", msg.GetData())
-			for _, addr := range targetAddresses {
-				sender, err := session.NewSender(amqp.LinkTargetAddress(addr))
-				if err != nil {
-					log.Fatalf("failed to create sender: %v", err)
+			senders[i] = sender
+			defer sender.Close(ctx)
+		}
+		for {
+			for _, sender := range senders {
+				msg, ok := <-msgChan
+				if !ok {
+					log.Warnf("msg channel closed. Stopping the publish routine.")
+					runtime.Goexit()
 				}
+				log.Infof("publishing msg '%s'...", msg.GetData())
 				err = sender.Send(ctx, &msg)
 				if err != nil {
-					log.Errorf("failed to publish msg '%s' to address '%s': %v", string(msg.GetData()), addr, err.Error())
+					log.Errorf("failed to publish msg '%s' to address '%s': %v", string(msg.GetData()), sender.Address(), err.Error())
 				} else {
-					log.Infof("published msg '%s' to address '%s'", string(msg.GetData()), addr)
+					log.Infof("published msg '%s' to address '%s'", string(msg.GetData()), sender.Address())
 				}
 			}
 		}
