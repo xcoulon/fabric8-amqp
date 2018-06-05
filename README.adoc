@@ -1,14 +1,14 @@
-= Fabric8-AMQP - Test case 1
+= Fabric8-AMQP - Test case 2
 
 Playing with Apache ActiveMQ Artemis 2.6.0 on OpenShift/Minishift
 
 == Deploying Apache ActiveMQ Artemis
 
-First, the Docker image is built by downloading the Apache ActiveMQ Artemis archive and extracting it 
+First, the Docker image is built by downloading the Apache ActiveMQ Artemis archive, extracting it in
+a Docker `openjdk:9` image and pushing it in the `fabric8` org in the Openshift container registry: 
 
 ```
-$ docker build -t fabric8/activemq-artemis:2.6.0 -f -f openshift/Dockerfile.activemq-artemis .
-$ oc apply -f openshift/activemq-artemis-deploy.yaml
+$ make deploy-activemq-artemis
 ```
 
 == Building and deploying the publisher
@@ -56,45 +56,41 @@ deploymentconfig "subscriber1" scaled
 deploymentconfig "subscriber2" scaled
 
 $ oc get pods
-NAME                                READY     STATUS              RESTARTS   AGE
-activemq-artemis-74888b57b4-vdvh9   1/1       Running             0          4h
-publisher-86-c7r4q                  1/1       Running             0          9m
-subscriber1-7-ghnvk                 1/1       Running             0          9m
-subscriber2-1-59bgm                 1/1       Running             0          8m
+NAME                                READY     STATUS    RESTARTS   AGE
+activemq-artemis-74888b57b4-vdvh9   1/1       Running   0          18h
+publisher-87-mzwbw                  1/1       Running   0          5s
+subscriber1-7-r6szt                 1/1       Running   0          4s
+subscriber2-1-tczz8                 1/1       Running   0          3s
+
 
 # check the logs on the publisher
-$ oc logs publisher-86-c7r4q
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=publisher-86-c7r4q
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=publisher-86-c7r4q
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=publisher-86-c7r4q
-INFO[0003] preparing msg 'message #1                     id=publisher-86-c7r4q
-INFO[0003] publishing msg 'message #1'...                id=publisher-86-c7r4q
-INFO[0003] published msg 'message #1' to address 'addr1'  id=publisher-86-c7r4q
-INFO[0003] publishing msg 'message #1'...                id=publisher-86-c7r4q
-INFO[0003] published msg 'message #1' to address 'addr2'  id=publisher-86-c7r4q
-INFO[0006] preparing msg 'message #2                     id=publisher-86-c7r4q
-INFO[0006] publishing msg 'message #2'...                id=publisher-86-c7r4q
-INFO[0006] published msg 'message #2' to address 'addr1'  id=publisher-86-c7r4q
-INFO[0006] publishing msg 'message #2'...                id=publisher-86-c7r4q
-INFO[0006] published msg 'message #2' to address 'addr2'  id=publisher-86-c7r4q
+$ oc logs publisher-87-mzwbw
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=publisher-87-mzwbw
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=publisher-87-mzwbw
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=publisher-87-mzwbw
+INFO[0003] preparing msg 'message #1                     id=publisher-87-mzwbw
+INFO[0003] publishing msg 'message #1'...                id=publisher-87-mzwbw
+INFO[0003] published msg 'message #1' to address 'addr1'  id=publisher-87-mzwbw
+INFO[0003] published msg 'message #1' to address 'addr2'  id=publisher-87-mzwbw
+...
+INFO[0030] preparing msg 'message #10                    id=publisher-87-mzwbw
+INFO[0030] publishing msg 'message #10'...               id=publisher-87-mzwbw
+INFO[0030] published msg 'message #10' to address 'addr1'  id=publisher-87-mzwbw
+INFO[0030] published msg 'message #10' to address 'addr2'  id=publisher-87-mzwbw 
 ^C
-# check the logs on subscriber 2
+
+# check the logs on subscriber 1
 $ oc logs subscriber1-7-ghnvk
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber1-7-ghnvk
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber1-7-ghnvk
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber1-7-ghnvk
-INFO[0002] received msg: message #1                      id=subscriber1-7-ghnvk
-INFO[0005] received msg: message #2                      id=subscriber1-7-ghnvk
 ^C
 
 # check the logs on subscriber 2
 $ oc logs subscriber2-1-59bgm
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber2-1-59bgm
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber2-1-59bgm
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber2-1-59bgm
-INFO[0000] received msg: message #1                      id=subscriber2-1-59bgm
-INFO[0003] received msg: message #2                      id=subscriber2-1-59bgm
 ^C
+
+# kill subscriber 2, let OpenShift schedule another one
+
+# check the logs on "new" subscriber 2
+$ oc logs 
 
 
 ```

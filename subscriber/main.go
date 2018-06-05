@@ -29,6 +29,7 @@ func main() {
 
 	for {
 		msg, err := receiver.Receive(ctx)
+		msg.Accept()
 		if err != nil {
 			log.Errorf("failed to receive msg: %v", err.Error())
 		} else {

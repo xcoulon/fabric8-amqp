@@ -18,7 +18,11 @@ RUN mkdir /apache-artemis/data && \
     chgrp -R 0 /apache-artemis/data && \
     chmod -R g=u /apache-artemis/data
 
+# Web console
 EXPOSE 8161
+
+# AMPQ, etc.
+EXPOSE 61616
 
 
 
