@@ -50,77 +50,65 @@ deployment "activemq-artemis" scaled
 
  
 # start the publisher and subscribers (replica count was previously lowered to '0' to stop all publishing)
-$ oc scale dc/publisher dc/subscriber1 dc/subscriber2 --replicas=1
+$ oc scale dc/publisher --replicas=1
 deploymentconfig "publisher" scaled
-deploymentconfig "subscriber1" scaled
-deploymentconfig "subscriber2" scaled
-
-# then add a second pod for the subscriber 2
-$ oc scale dc/subscriber2 --replicas=2
 
 $ oc get pods
-NAME                               READY     STATUS        RESTARTS   AGE
-activemq-artemis-8c96dbddb-vsqx7   1/1       Running       1          15h
-publisher-98-vtt5s                 1/1       Running       0          24s
-subscriber1-13-qpd26               1/1       Running       0          23s
-subscriber2-9-p4n4m                1/1       Running       0          22s
-subscriber2-9-vsrkk                1/1       Running       0          19s
+NAME                               READY     STATUS    RESTARTS   AGE
+activemq-artemis-8c96dbddb-vsqx7   1/1       Running   1          15h
+publisher-98-5tcmv                 1/1       Running   0          2m 
  
 # check the logs on the publisher
-$ oc logs publisher-98-vtt5s
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=publisher-98-vtt5s
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=publisher-98-vtt5s
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=publisher-98-vtt5s
-INFO[0003] preparing msg 'message #1                     id=publisher-98-vtt5s
-INFO[0003] publishing msg 'message #1'...                id=publisher-98-vtt5s
-INFO[0003] published msg 'message #1' to address 'fabric8.queue1'  id=publisher-98-vtt5s
-INFO[0003] published msg 'message #1' to address 'fabric8.queue2'  id=publisher-98-vtt5s
+$ oc logs publisher-98-5tcmv
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=publisher-98-5tcmv
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=publisher-98-5tcmv
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=publisher-98-5tcmv
+INFO[0003] preparing msg 'message #1                     id=publisher-98-5tcmv
+INFO[0003] publishing msg 'message #1'...                id=publisher-98-5tcmv
+INFO[0003] published msg 'message #1' to address 'fabric8.queue1'  id=publisher-98-5tcmv
+INFO[0003] published msg 'message #1' to address 'fabric8.queue2'  id=publisher-98-5tcmv
+INFO[0006] preparing msg 'message #2                     id=publisher-98-5tcmv
+INFO[0006] publishing msg 'message #2'...                id=publisher-98-5tcmv
+INFO[0006] published msg 'message #2' to address 'fabric8.queue1'  id=publisher-98-5tcmv
+INFO[0006] published msg 'message #2' to address 'fabric8.queue2'  id=publisher-98-5tcmv
 ...
 ^C
 
-# check the logs on subscriber 2
-$ oc logs subscriber2-9-p4n4m
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber2-9-p4n4m
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber2-9-p4n4m
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber2-9-p4n4m
-INFO[0001] received msg: message #1                      id=subscriber2-9-p4n4m
-INFO[0004] received msg: message #2                      id=subscriber2-9-p4n4m
-INFO[0010] received msg: message #4                      id=subscriber2-9-p4n4m
-INFO[0016] received msg: message #6                      id=subscriber2-9-p4n4m
-INFO[0022] received msg: message #8                      id=subscriber2-9-p4n4m
-INFO[0028] received msg: message #10                     id=subscriber2-9-p4n4m
-INFO[0034] received msg: message #12                     id=subscriber2-9-p4n4m
-INFO[0040] received msg: message #14                     id=subscriber2-9-p4n4m
-INFO[0046] received msg: message #16                     id=subscriber2-9-p4n4m
-INFO[0052] received msg: message #18                     id=subscriber2-9-p4n4m
-INFO[0058] received msg: message #20                     id=subscriber2-9-p4n4m
-INFO[0064] received msg: message #22                     id=subscriber2-9-p4n4m
+# deploy subscribers 1 and 2 a few minutes after publisher was started 
+$ oc scale dc/subscriber1 dc/subscriber2 --replicas=1
+deploymentconfig "subscriber1" scaled
+deploymentconfig "subscriber2" scaled
+
+$ oc get pods
+NAME                               READY     STATUS    RESTARTS   AGE
+activemq-artemis-8c96dbddb-vsqx7   1/1       Running   1          15h
+publisher-98-5tcmv                 1/1       Running   0          4m
+subscriber1-15-ppct6               1/1       Running   0          21s
+subscriber2-9-8j7nx                1/1       Running   0          20s
+
+# check the logs on subscriber 1
+$ oc logs subscriber1-15-ppct6
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber1-15-ppct6
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber1-15-ppct6
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber1-15-ppct6
+INFO[0000] received msg: message #1                      id=subscriber1-15-ppct6
+...
+INFO[0000] received msg: message #76                     id=subscriber1-15-ppct6
+INFO[0003] received msg: message #77                     id=subscriber1-15-ppct6
 ^C
 
-# check the logs on other pod of subscriber 2
-$ oc logs subscriber2-9-vsrkk
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber2-9-vsrkk
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber2-9-vsrkk
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber2-9-vsrkk
-INFO[0004] received msg: message #3                      id=subscriber2-9-vsrkk
-INFO[0010] received msg: message #5                      id=subscriber2-9-vsrkk
-INFO[0016] received msg: message #7                      id=subscriber2-9-vsrkk
-INFO[0022] received msg: message #9                      id=subscriber2-9-vsrkk
-INFO[0028] received msg: message #11                     id=subscriber2-9-vsrkk
-INFO[0034] received msg: message #13                     id=subscriber2-9-vsrkk
-INFO[0040] received msg: message #15                     id=subscriber2-9-vsrkk
-INFO[0046] received msg: message #17                     id=subscriber2-9-vsrkk
-INFO[0052] received msg: message #19                     id=subscriber2-9-vsrkk
-INFO[0058] received msg: message #21                     id=subscriber2-9-vsrkk
-INFO[0064] received msg: message #23                     id=subscriber2-9-vsrkk
-INFO[0070] received msg: message #25                     id=subscriber2-9-vsrkk
-INFO[0076] received msg: message #27                     id=subscriber2-9-vsrkk
-INFO[0082] received msg: message #29                     id=subscriber2-9-vsrkk
-INFO[0088] received msg: message #31                     id=subscriber2-9-vsrkk
-^C
+# check the logs on subscriber 2
+$ oc logs subscriber2-9-8j7nx
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber2-9-8j7nx
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber2-9-8j7nx
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber2-9-8j7nx
+INFO[0000] received msg: message #1                      id=subscriber2-9-8j7nx
+...
+INFO[0000] received msg: message #76                     id=subscriber2-9-8j7nx
+INFO[0002] received msg: message #77                     id=subscriber2-9-8j7nx
 
 ```
 
 === Conclusion
 
-The messages sent to the `fabric8.queue2` queue were load-balanced between the 2 pods.
+All pending messages sent to the `fabric8.queue1` and `fabric8.queue2` queues were consumed when the subscribers were started.
