@@ -89,6 +89,7 @@ build-subscriber: clean-artifacts ## builds the subscriber Docker image
 	eval $$(minishift docker-env) && docker build -t fabric8-subscriber:latest \
 	  --build-arg BIN_DIR=$(BUILD_DIR) --build-arg BIN_NAME=subscriber \
 	  -f subscriber/Dockerfile .
+	
 
 
 .PHONY: deploy-subscribers

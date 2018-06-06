@@ -25,6 +25,10 @@ RUN mkdir -p ${BROKER_DIR} && \
     ${BROKER_DIR}
 # modify the etc/jolokia-access.xml (TODO: avoid using hard-coded values)
 COPY apache-artemis/jolokia-access.xml ${BROKER_DIR}/etc
+COPY apache-artemis/broker.xml ${BROKER_DIR}/etc
+
+
+
 
 # see https://docs.openshift.com/container-platform/3.9/creating_images/guidelines.html#openshift-specific-guidelines
 RUN chgrp -R 0 ${ARTEMIS_HOME} && \

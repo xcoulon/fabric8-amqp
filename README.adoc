@@ -28,10 +28,10 @@ To avoid repetition among the YAML files, both subscribers are created using the
 
 ```
 # subscriber 1 with 0 replica 
-$ oc process -f openshift/subscriber.tmpl.yaml -p SERVICE=subscriber1 -p REPLICA_COUNT=0 -p TARGET_ADDRESSES=addr1 | oc apply -f -
+$ oc process -f openshift/subscriber.tmpl.yaml -p SERVICE=subscriber1 -p REPLICA_COUNT=0 -p TARGET_ADDRESSES=fabric8.queue1 | oc apply -f -
 
 # subscriber 2 with 0 replica
-$ oc process -f openshift/subscriber.tmpl.yaml -p SERVICE=subscriber2 -p REPLICA_COUNT=0 -p TARGET_ADDRESSES=addr2 | oc apply -f -
+$ oc process -f openshift/subscriber.tmpl.yaml -p SERVICE=subscriber2 -p REPLICA_COUNT=0 -p TARGET_ADDRESSES=fabric8.queue2 | oc apply -f -
 ```
 
 The template used above creates both the `ImageStream` and the `DeployConfig` resources for each subscriber. Once this is done, a new version of the code can be deployed with
@@ -55,62 +55,72 @@ deploymentconfig "publisher" scaled
 deploymentconfig "subscriber1" scaled
 deploymentconfig "subscriber2" scaled
 
+# then add a second pod for the subscriber 2
+$ oc scale dc/subscriber2 --replicas=2
+
 $ oc get pods
-NAME                                READY     STATUS    RESTARTS   AGE
-activemq-artemis-8c96dbddb-7xdm2   1/1       Running   0          53m
-publisher-94-t9hpl                 1/1       Running   0          11s
-subscriber1-8-zbj5z                1/1       Running   0          10s
-subscriber2-3-894vq                1/1       Running   0          9s
-
-
+NAME                               READY     STATUS        RESTARTS   AGE
+activemq-artemis-8c96dbddb-vsqx7   1/1       Running       1          15h
+publisher-98-vtt5s                 1/1       Running       0          24s
+subscriber1-13-qpd26               1/1       Running       0          23s
+subscriber2-9-p4n4m                1/1       Running       0          22s
+subscriber2-9-vsrkk                1/1       Running       0          19s
+ 
 # check the logs on the publisher
-$ oc logs publisher-94-t9hpl
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=publisher-94-t9hpl
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=publisher-94-t9hpl
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=publisher-94-t9hpl
-INFO[0003] preparing msg 'message #1                     id=publisher-94-t9hpl
-INFO[0003] publishing msg 'message #1'...                id=publisher-94-t9hpl
-INFO[0003] published msg 'message #1' to address 'addr1'  id=publisher-94-t9hpl
-INFO[0003] published msg 'message #1' to address 'addr2'  id=publisher-94-t9hpl
-...
-^C
-
-# check the logs on subscriber 1
-$ oc logs subscriber1-8-zbj5z
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber1-8-zbj5z
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber1-8-zbj5z
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber1-8-zbj5z
-INFO[0001] received msg: message #1                      id=subscriber1-8-zbj5z
+$ oc logs publisher-98-vtt5s
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=publisher-98-vtt5s
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=publisher-98-vtt5s
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=publisher-98-vtt5s
+INFO[0003] preparing msg 'message #1                     id=publisher-98-vtt5s
+INFO[0003] publishing msg 'message #1'...                id=publisher-98-vtt5s
+INFO[0003] published msg 'message #1' to address 'fabric8.queue1'  id=publisher-98-vtt5s
+INFO[0003] published msg 'message #1' to address 'fabric8.queue2'  id=publisher-98-vtt5s
 ...
 ^C
 
 # check the logs on subscriber 2
-$ oc logs subscriber2-3-894vq
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber2-3-894vq
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber2-3-894vq
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber2-3-894vq
-INFO[0001] received msg: message #1                      id=subscriber2-3-894vq
-INFO[0004] received msg: message #2                      id=subscriber2-3-894vq
-INFO[0007] received msg: message #3                      id=subscriber2-3-894vq
-INFO[0010] received msg: message #4                      id=subscriber2-3-894vq
-...
-# kill subscriber 2, let OpenShift schedule another pod
-...
-INFO[0029] received msg: message #117                    id=subscriber2-3-894vq
-INFO[0032] received msg: message #118                    id=subscriber2-3-894vq
-INFO[0035] received msg: message #119                    id=subscriber2-3-894vq
-rpc error: code = Unknown desc = Error: No such container: fabefd987b0e0d5ece90130239fabd464123b88b91e4b90abfbc9b3474ec6c6c
+$ oc logs subscriber2-9-p4n4m
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber2-9-p4n4m
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber2-9-p4n4m
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber2-9-p4n4m
+INFO[0001] received msg: message #1                      id=subscriber2-9-p4n4m
+INFO[0004] received msg: message #2                      id=subscriber2-9-p4n4m
+INFO[0010] received msg: message #4                      id=subscriber2-9-p4n4m
+INFO[0016] received msg: message #6                      id=subscriber2-9-p4n4m
+INFO[0022] received msg: message #8                      id=subscriber2-9-p4n4m
+INFO[0028] received msg: message #10                     id=subscriber2-9-p4n4m
+INFO[0034] received msg: message #12                     id=subscriber2-9-p4n4m
+INFO[0040] received msg: message #14                     id=subscriber2-9-p4n4m
+INFO[0046] received msg: message #16                     id=subscriber2-9-p4n4m
+INFO[0052] received msg: message #18                     id=subscriber2-9-p4n4m
+INFO[0058] received msg: message #20                     id=subscriber2-9-p4n4m
+INFO[0064] received msg: message #22                     id=subscriber2-9-p4n4m
+^C
 
-# check the logs on "new" subscriber 2
-$ oc logs subscriber2-3-dtwsz
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber2-3-dtwsz
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber2-3-dtwsz
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber2-3-dtwsz
-INFO[0000] received msg: message #120                    id=subscriber2-3-dtwsz
+# check the logs on other pod of subscriber 2
+$ oc logs subscriber2-9-vsrkk
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber2-9-vsrkk
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber2-9-vsrkk
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber2-9-vsrkk
+INFO[0004] received msg: message #3                      id=subscriber2-9-vsrkk
+INFO[0010] received msg: message #5                      id=subscriber2-9-vsrkk
+INFO[0016] received msg: message #7                      id=subscriber2-9-vsrkk
+INFO[0022] received msg: message #9                      id=subscriber2-9-vsrkk
+INFO[0028] received msg: message #11                     id=subscriber2-9-vsrkk
+INFO[0034] received msg: message #13                     id=subscriber2-9-vsrkk
+INFO[0040] received msg: message #15                     id=subscriber2-9-vsrkk
+INFO[0046] received msg: message #17                     id=subscriber2-9-vsrkk
+INFO[0052] received msg: message #19                     id=subscriber2-9-vsrkk
+INFO[0058] received msg: message #21                     id=subscriber2-9-vsrkk
+INFO[0064] received msg: message #23                     id=subscriber2-9-vsrkk
+INFO[0070] received msg: message #25                     id=subscriber2-9-vsrkk
+INFO[0076] received msg: message #27                     id=subscriber2-9-vsrkk
+INFO[0082] received msg: message #29                     id=subscriber2-9-vsrkk
+INFO[0088] received msg: message #31                     id=subscriber2-9-vsrkk
+^C
 
 ```
 
-
 === Conclusion
 
-When the pod for the subscriber 2 was (hard) deleted, no message was lost.
+The messages sent to the `fabric8.queue2` queue were load-balanced between the 2 pods.
