@@ -26,7 +26,7 @@ spec:
         - name: PASSWORD
           value: "password"
         - name: TARGET_ADDRESSES
-          value: "addr1,addr2"
+          value: "fabric8.queue1,fabric8.queue2"
         - name: POD_NAME
           valueFrom:
             fieldRef:
