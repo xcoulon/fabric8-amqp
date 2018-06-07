@@ -219,7 +219,16 @@ under the License.
                <queue name="ExpiryQueue" />
             </anycast>
          </address>
-
+        <address name="fabric8.foo">
+          <multicast>
+            <queue name="fabric8.foo.queue1">
+             <durable>true</durable>
+            </queue>
+            <queue name="fabric8.foo.queue2">
+             <durable>true</durable>
+            </queue>
+          </multicast>
+        </address>
       </addresses>
 
 

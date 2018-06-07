@@ -18,7 +18,7 @@ func main() {
 	config := configuration.New()
 
 	// message channel with enough capacity to handle a disconnection (hopefully...)
-	msgChan := make(chan amqp.Message, 1000)
+	msgDataChan := make(chan []byte, 1000)
 
 	ctx := context.Background()
 	session, err := client.NewAMQPSession(config)
@@ -30,30 +30,31 @@ func main() {
 	// async function to publish the messages on the server
 	go func() {
 		// wait for a new message to arrive
-		targetAddresses := config.GetTargetAddresses()
-		senders := make([]*amqp.Sender, len(targetAddresses))
-		for i, addr := range targetAddresses {
-			sender, err := session.NewSender(amqp.LinkTargetAddress(addr))
-			if err != nil {
-				log.Fatalf("failed to create sender: %v", err)
-			}
-			senders[i] = sender
-			defer sender.Close(ctx)
+		addr := config.GetPublishAddress()
+		sender, err := session.NewSender(amqp.LinkTargetAddress(addr))
+		if err != nil {
+			log.Fatalf("failed to create sender: %v", err)
 		}
+		defer sender.Close(ctx)
 		for {
-			msg, ok := <-msgChan
+			msgData, ok := <-msgDataChan
 			if !ok {
 				log.Warnf("msg channel closed. Stopping the publish routine.")
 				runtime.Goexit()
 			}
-			log.Infof("publishing msg '%s'...", msg.GetData())
-			for _, sender := range senders {
-				err = sender.Send(ctx, &msg)
-				if err != nil {
-					log.Errorf("failed to publish msg '%s' to address '%s': %v", string(msg.GetData()), sender.Address(), err.Error())
-				} else {
-					log.Infof("published msg '%s' to address '%s'", string(msg.GetData()), sender.Address())
-				}
+			msg := amqp.Message{
+				Header: &amqp.MessageHeader{
+					DeliveryCount: 2,
+					FirstAcquirer: true,
+				},
+				Data: [][]byte{msgData},
+			}
+			log.Infof("publishing msg '%s' on '%s'...", msg.GetData(), addr)
+			err = sender.Send(ctx, &msg)
+			if err != nil {
+				log.Errorf("failed to publish msg '%s' to address '%s': %v", string(msg.GetData()), sender.Address(), err.Error())
+			} else {
+				log.Infof("published msg '%s' to address '%s'", string(msg.GetData()), sender.Address())
 			}
 		}
 	}()
@@ -65,8 +66,7 @@ func main() {
 		<-time.After(3 * time.Second)
 		data := fmt.Sprintf("message #%d", count)
 		log.Infof("preparing msg '%s", data)
-		msg := amqp.NewMessage([]byte(data))
-		msgChan <- *msg
+		msgDataChan <- []byte(data)
 		count++
 	}
 }

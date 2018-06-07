@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"strings"
 
 	"pack.ag/amqp"
 
@@ -29,11 +30,18 @@ func main() {
 
 	for {
 		msg, err := receiver.Receive(ctx)
+		msgData := string(msg.GetData())
 		if err != nil {
 			log.Errorf("failed to receive msg: %v", err.Error())
 		} else {
-			log.Infof("received msg: %v", string(msg.GetData()))
+			// reject messages ending with `0` or `5`
+			if strings.HasSuffix(msgData, "0") || strings.HasSuffix(msgData, "5") {
+				log.Warnf("rejected message '%s'", msgData)
+				msg.Modify(true, true, amqp.Annotations{})
+			} else {
+				log.Infof("accepted message '%s'", msgData)
+				msg.Accept()
+			}
 		}
-		msg.Accept()
 	}
 }
