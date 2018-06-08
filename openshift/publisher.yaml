@@ -25,8 +25,8 @@ spec:
           value: "admin"
         - name: PASSWORD
           value: "password"
-        - name: TARGET_ADDRESSES
-          value: "fabric8.queue1,fabric8.queue2"
+        - name: PUBLISH_ADDRESS
+          value: "fabric8.foo"
         - name: POD_NAME
           valueFrom:
             fieldRef:

@@ -22,10 +22,11 @@ func main() {
 	}
 	defer session.Close(ctx)
 
-	receiver, err := session.NewReceiver(amqp.LinkSourceAddress(config.GetTargetAddresses()[0]))
+	receiver, err := session.NewReceiver(amqp.LinkAddress(config.GetQueueName()))
 	if err != nil {
 		log.Fatalf("failed to create receiver: %v", err)
 	}
+	log.Infof("initialized receiver on '%s'", config.GetQueueName())
 
 	for {
 		msg, err := receiver.Receive(ctx)
@@ -34,6 +35,5 @@ func main() {
 		} else {
 			log.Infof("received msg: %v", string(msg.GetData()))
 		}
-		msg.Accept()
 	}
 }

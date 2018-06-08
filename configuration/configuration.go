@@ -10,11 +10,12 @@ const (
 	// Constants for viper variable names. Will be used to set
 	// default values as well as to get each value
 
-	varBrokerURL       = "broker.url"
-	varPodName         = "pod.name"
-	varUsername        = "username"
-	varPassword        = "password"
-	varTargetAddresses = "target.addresses"
+	varBrokerURL      = "broker.url"
+	varPodName        = "pod.name"
+	varUsername       = "username"
+	varPassword       = "password"
+	varPublishAddress = "publish.address"
+	varQueueName      = "queue.name"
 )
 
 // Config encapsulates the Viper configuration registry which stores the
@@ -60,8 +61,12 @@ func (c *Config) GetPassword() string {
 	return c.v.GetString(varPassword)
 }
 
-// GetTargetAddresses returns the target addresses used to deliver messages
-func (c *Config) GetTargetAddresses() []string {
-	addrs := c.v.GetString(varTargetAddresses)
-	return strings.Split(addrs, ",")
+// GetPublishAddress returns the target address used to deliver messages
+func (c *Config) GetPublishAddress() string {
+	return c.v.GetString(varPublishAddress)
+}
+
+// GetQueueName returns the name of the queue to register for messages
+func (c *Config) GetQueueName() string {
+	return c.v.GetString(varQueueName)
 }

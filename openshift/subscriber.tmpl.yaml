@@ -7,7 +7,7 @@ parameters:
   - name: SERVICE
     description: "The name of the service"
     value: service1
-  - name: TARGET_ADDRESSES
+  - name: QUEUE_NAME
     description: "The name of the target addresses to which messages are delivered"
     value: service1
   - name: REPLICA_COUNT
@@ -51,8 +51,8 @@ objects:
               value: "admin"
             - name: PASSWORD
               value: "password"
-            - name: TARGET_ADDRESSES
-              value: ${TARGET_ADDRESSES}
+            - name: QUEUE_NAME
+              value: ${QUEUE_NAME}
             - name: POD_NAME
               valueFrom:
                 fieldRef:

@@ -9,11 +9,18 @@ spec:
       labels:
         app: activemq-artemis
     spec:
+      volumes:
+        - name: config-volume
+          configMap:
+            name: apache-artemis-cm
       containers:
       - name: activemq-artemis
         image: "fabric8/activemq-artemis:2.6.0"
         command: ["/var/lib/apache-artemis/data/fabric8-broker/bin/artemis"]
         args: ["run"]
+        volumeMounts:
+        - name: config-volume
+          mountPath: /var/lib/apache-artemis/data/fabric8-broker/etc
 ---
 apiVersion: v1
 kind: Service
@@ -41,3 +48,4 @@ spec:
   selector:
     app: activemq-artemis
   type: NodePort
+---

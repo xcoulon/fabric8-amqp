@@ -186,11 +186,11 @@ under the License.
          </address-setting>
 
          <!--custom settings for 'fabric8' queues: ANYCAST routing -->
-         <address-setting match="fabric8.#">
+         <!-- <address-setting match="fabric8.#">
             <auto-create-addresses>true</auto-create-addresses>
             <auto-create-queues>true</auto-create-queues>
             <default-address-routing-type>ANYCAST</default-address-routing-type>
-         </address-setting>
+         </address-setting> -->
 
          <!--default for catch all-->
          <address-setting match="#">
@@ -219,7 +219,16 @@ under the License.
                <queue name="ExpiryQueue" />
             </anycast>
          </address>
-
+        <address name="fabric8.foo">
+          <multicast>
+            <queue name="queue1">
+             <durable>true</durable>
+            </queue>
+            <queue name="queue2">
+             <durable>true</durable>
+            </queue>
+          </multicast>
+        </address>
       </addresses>
 
 

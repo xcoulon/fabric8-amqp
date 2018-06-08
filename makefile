@@ -60,12 +60,15 @@ clean-artifacts:
 
 .PHONY: deploy-activemq-artemis
 deploy-activemq-artemis: ## builds and deploy the ActiveMQ Artemis service on Minishift
+	oc delete configmap --ignore-not-found=true apache-artemis-cm
+	oc create configmap apache-artemis-cm --from-file=apache-artemis/config
 	eval $$(minishift docker-env) && \
 	docker build -t fabric8/activemq-artemis:2.6.0 -f apache-artemis/Dockerfile . && \
 	eval $$(minishift docker-env) && docker login -u developer -p $(shell oc whoami -t) $(shell minishift openshift registry) && \
 	docker tag fabric8/activemq-artemis:2.6.0  $(MINISHIFT_REGISTRY)/$(MINISHIFT_PROJECT)/activemq-artemis:2.6.0 && \
 	docker push $(MINISHIFT_REGISTRY)/$(MINISHIFT_PROJECT)/activemq-artemis:2.6.0 && \
 	oc apply -f openshift/activemq-artemis-deploy.yaml
+	oc get pods -l app=activemq-artemis -o name | xargs oc delete
 
 
 .PHONY: build-publisher

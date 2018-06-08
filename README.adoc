@@ -1,15 +1,37 @@
-= Fabric8-AMQP - Test case 2
+= Fabric8-AMQP - Test case 3
 
 Playing with Apache ActiveMQ Artemis 2.6.0 on OpenShift/Minishift
 
-== Deploying Apache ActiveMQ Artemis
+== Configuring Apache ActiveMQ Artemis
 
-First, the Docker image is built by downloading the Apache ActiveMQ Artemis archive, extracting it in
-a Docker `openjdk:9` image and pushing it in the `fabric8` org in the Openshift container registry: 
+The Docker image is built by downloading the Apache ActiveMQ Artemis archive, extracting it in
+a Docker `openjdk:9` image and pushing it in the `fabric8` org in the Openshift container registry.
+This process not only creates the `Deployment` resource, but it also generates a `ConfigMap` with the
+content of the `apache-artemis/config` directory, whose files will accessible in a volume be mounted in
+the `./etc` directory of the broker. This allows for including custom configuration of the addresses and
+queues at the deployment time.
+
+In particular, the `broker.xml` file contains the following definition for the `fabric8.foo` address:
+
+```
+<address name="fabric8.foo">
+    <multicast>
+        <queue name="queue1">
+            <durable>true</durable>
+        </queue>
+        <queue name="queue2">
+            <durable>true</durable>
+        </queue>
+    </multicast>
+</address>
+```
+
+With such a `multicast` configuration, messages sent to the `fabric8.foo` address will be delivered to both `fabric.foo::queue1` and `fabric8.foo::queue2` queues.
 
 ```
 $ make deploy-activemq-artemis
 ```
+
 
 == Building and deploying the publisher
 
@@ -27,14 +49,14 @@ All subscribers share the same code but are configured differently in their Depl
 To avoid repetition among the YAML files, both subscribers are created using the same OpenShift template:
 
 ```
-# subscriber 1 with 0 replica 
-$ oc process -f openshift/subscriber.tmpl.yaml -p SERVICE=subscriber1 -p REPLICA_COUNT=0 -p TARGET_ADDRESSES=fabric8.queue1 | oc apply -f -
+# subscriber 1 with 1 replica 
+$ oc process -f openshift/subscriber.tmpl.yaml -p SERVICE=subscriber1 -p REPLICA_COUNT=1 -p QUEUE_NAME=fabric8.foo::queue1 | oc apply -f -
 
-# subscriber 2 with 0 replica
-$ oc process -f openshift/subscriber.tmpl.yaml -p SERVICE=subscriber2 -p REPLICA_COUNT=0 -p TARGET_ADDRESSES=fabric8.queue2 | oc apply -f -
+# subscriber 2 with 2 replicas
+$ oc process -f openshift/subscriber.tmpl.yaml -p SERVICE=subscriber2 -p REPLICA_COUNT=2 -p QUEUE_NAME=fabric8.foo::queue2 | oc apply -f -
 ```
 
-The template used above creates both the `ImageStream` and the `DeployConfig` resources for each subscriber. Once this is done, a new version of the code can be deployed with
+The template used above creates both the `ImageStream` and the `DeployConfig` resources for each subscriber. Once this is done, newer versions of the code can be deployed with
 
 ```
 $ make deploy-subscribers
@@ -48,67 +70,66 @@ $ make deploy-subscribers
 $ oc scale deploy/activemq-artemis --replicas=1
 deployment "activemq-artemis" scaled
 
- 
-# start the publisher and subscribers (replica count was previously lowered to '0' to stop all publishing)
-$ oc scale dc/publisher --replicas=1
-deploymentconfig "publisher" scaled
-
 $ oc get pods
 NAME                               READY     STATUS    RESTARTS   AGE
-activemq-artemis-8c96dbddb-vsqx7   1/1       Running   1          15h
-publisher-98-5tcmv                 1/1       Running   0          2m 
+activemq-artemis-d9997cbcb-gpwd6   1/1       Running   0          3m
+publisher-114-mbz8g                1/1       Running   0          5s
+subscriber1-28-4p4s9               1/1       Running   0          28s
+subscriber2-20-5tg9c               1/1       Running   0          38s
+subscriber2-20-zv54m               1/1       Running   0          38s
+
  
 # check the logs on the publisher
-$ oc logs publisher-98-5tcmv
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=publisher-98-5tcmv
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=publisher-98-5tcmv
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=publisher-98-5tcmv
-INFO[0003] preparing msg 'message #1                     id=publisher-98-5tcmv
-INFO[0003] publishing msg 'message #1'...                id=publisher-98-5tcmv
-INFO[0003] published msg 'message #1' to address 'fabric8.queue1'  id=publisher-98-5tcmv
-INFO[0003] published msg 'message #1' to address 'fabric8.queue2'  id=publisher-98-5tcmv
-INFO[0006] preparing msg 'message #2                     id=publisher-98-5tcmv
-INFO[0006] publishing msg 'message #2'...                id=publisher-98-5tcmv
-INFO[0006] published msg 'message #2' to address 'fabric8.queue1'  id=publisher-98-5tcmv
-INFO[0006] published msg 'message #2' to address 'fabric8.queue2'  id=publisher-98-5tcmv
+$ oc logs publisher-114-mbz8g
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=publisher-114-mbz8g
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=publisher-114-mbz8g
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=publisher-114-mbz8g
+INFO[0003] published msg 'message #1 (2018-06-08 10:04:16)' to address 'fabric8.foo'  id=publisher-114-mbz8g
+INFO[0006] published msg 'message #2 (2018-06-08 10:04:19)' to address 'fabric8.foo'  id=publisher-114-mbz8g
+INFO[0009] published msg 'message #3 (2018-06-08 10:04:22)' to address 'fabric8.foo'  id=publisher-114-mbz8g
+INFO[0012] published msg 'message #4 (2018-06-08 10:04:25)' to address 'fabric8.foo'  id=publisher-114-mbz8g
+INFO[0015] published msg 'message #5 (2018-06-08 10:04:28)' to address 'fabric8.foo'  id=publisher-114-mbz8g
 ...
 ^C
-
-# deploy subscribers 1 and 2 a few minutes after publisher was started 
-$ oc scale dc/subscriber1 dc/subscriber2 --replicas=1
-deploymentconfig "subscriber1" scaled
-deploymentconfig "subscriber2" scaled
-
-$ oc get pods
-NAME                               READY     STATUS    RESTARTS   AGE
-activemq-artemis-8c96dbddb-vsqx7   1/1       Running   1          15h
-publisher-98-5tcmv                 1/1       Running   0          4m
-subscriber1-15-ppct6               1/1       Running   0          21s
-subscriber2-9-8j7nx                1/1       Running   0          20s
 
 # check the logs on subscriber 1
-$ oc logs subscriber1-15-ppct6
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber1-15-ppct6
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber1-15-ppct6
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber1-15-ppct6
-INFO[0000] received msg: message #1                      id=subscriber1-15-ppct6
+$ oc logs subscriber1-28-4p4s9
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber1-28-4p4s9
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber1-28-4p4s9
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber1-28-4p4s9
+INFO[0000] initialized receiver on 'fabric8.foo::queue1'  id=subscriber1-28-4p4s9
+INFO[0026] received msg: message #1 (2018-06-08 10:04:16)  id=subscriber1-28-4p4s9
+INFO[0029] received msg: message #2 (2018-06-08 10:04:19)  id=subscriber1-28-4p4s9
+INFO[0032] received msg: message #3 (2018-06-08 10:04:22)  id=subscriber1-28-4p4s9
+INFO[0035] received msg: message #4 (2018-06-08 10:04:25)  id=subscriber1-28-4p4s9
+INFO[0038] received msg: message #5 (2018-06-08 10:04:28)  id=subscriber1-28-4p4s9
 ...
-INFO[0000] received msg: message #76                     id=subscriber1-15-ppct6
-INFO[0003] received msg: message #77                     id=subscriber1-15-ppct6
 ^C
 
-# check the logs on subscriber 2
-$ oc logs subscriber2-9-8j7nx
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber2-9-8j7nx
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber2-9-8j7nx
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber2-9-8j7nx
-INFO[0000] received msg: message #1                      id=subscriber2-9-8j7nx
+# check the logs on subscriber 2.1
+$ oc logs subscriber2-20-5tg9c
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber2-20-5tg9c
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber2-20-5tg9c
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber2-20-5tg9c
+INFO[0000] initialized receiver on 'fabric8.foo::queue2'  id=subscriber2-20-5tg9c
+INFO[0035] received msg: message #1 (2018-06-08 10:04:16)  id=subscriber2-20-5tg9c
+INFO[0041] received msg: message #3 (2018-06-08 10:04:22)  id=subscriber2-20-5tg9c
+INFO[0047] received msg: message #5 (2018-06-08 10:04:28)  id=subscriber2-20-5tg9c
 ...
-INFO[0000] received msg: message #76                     id=subscriber2-9-8j7nx
-INFO[0002] received msg: message #77                     id=subscriber2-9-8j7nx
+^C
 
+# check the logs on subscriber 2.2
+$ oc logs subscriber2-20-zv54m
+INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber2-20-zv54m
+INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber2-20-zv54m
+INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber2-20-zv54m
+INFO[0000] initialized receiver on 'fabric8.foo::queue2'  id=subscriber2-20-zv54m
+INFO[0038] received msg: message #2 (2018-06-08 10:04:19)  id=subscriber2-20-zv54m
+INFO[0044] received msg: message #4 (2018-06-08 10:04:25)  id=subscriber2-20-zv54m
+...
+^C
 ```
 
 === Conclusion
 
-All pending messages sent to the `fabric8.queue1` and `fabric8.queue2` queues were consumed when the subscribers were started.
+Messages sent to the `fabric8.foo` address were delivered to both `fabric8.foo::queue1` and `fabric8.foo::queue2` queues, but on the latter, the 2 subscribers were load-balanced, so messages were delivered to a single instance of the subscriber.
