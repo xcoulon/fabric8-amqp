@@ -8,16 +8,6 @@
   version = "v1.4.7"
 
 [[projects]]
-  name = "github.com/gogo/protobuf"
-  packages = [
-    "gogoproto",
-    "proto",
-    "protoc-gen-gogo/descriptor"
-  ]
-  revision = "1adfc126b41513cc696b209667c8656ea7aac67c"
-  version = "v1.0.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/hashicorp/hcl"
   packages = [
@@ -45,31 +35,6 @@
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   revision = "bb74f1db0675b241733089d5a1faa5dd8b0ef57b"
-
-[[projects]]
-  name = "github.com/nats-io/go-nats"
-  packages = [
-    ".",
-    "encoders/builtin",
-    "util"
-  ]
-  revision = "062418ea1c2181f52dc0f954f6204370519a868b"
-  version = "v1.5.0"
-
-[[projects]]
-  name = "github.com/nats-io/go-nats-streaming"
-  packages = [
-    ".",
-    "pb"
-  ]
-  revision = "6e620057a207bd61e992c1c5b6a2de7b6a4cb010"
-  version = "v0.3.4"
-
-[[projects]]
-  name = "github.com/nats-io/nuid"
-  packages = ["."]
-  revision = "289cccf02c178dc782430d534e3c1f5b72af807f"
-  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/pelletier/go-toml"
@@ -165,9 +130,19 @@
   revision = "b9bf967e3a73da612f8923137a4db396a766431e"
   version = "v0.5.1"
 
+[[projects]]
+  branch = "go1"
+  name = "qpid.apache.org"
+  packages = [
+    "amqp",
+    "electron",
+    "proton"
+  ]
+  revision = "6f799990cdf739b3caacf66eb2a9a29b14c9abeb"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fae66c35b946d9bf66b5849c256891e4a0c4f871361f9a5fa85cd74d511c3a46"
+  inputs-digest = "348e0a942ee28015cb6f3924909491c6d60df93af1848efc05ebce19ac8bf272"
   solver-name = "gps-cdcl"
   solver-version = 1

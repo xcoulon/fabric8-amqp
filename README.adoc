@@ -70,62 +70,56 @@ $ make deploy-subscribers
 $ oc scale deploy/activemq-artemis --replicas=1
 deployment "activemq-artemis" scaled
 
+# scale the publisher and subscribers
+$ oc scale dc/publisher dc/subscriber1 --replicas=1 && oc scale dc/subscriber2 --replicas=2
+deploymentconfig "publisher" scaled
+deploymentconfig "subscriber1" scaled
+deploymentconfig "subscriber2" scaled
+ 
 $ oc get pods
 NAME                               READY     STATUS    RESTARTS   AGE
-activemq-artemis-d9997cbcb-gpwd6   1/1       Running   0          3m
-publisher-114-mbz8g                1/1       Running   0          5s
-subscriber1-28-4p4s9               1/1       Running   0          28s
-subscriber2-20-5tg9c               1/1       Running   0          38s
-subscriber2-20-zv54m               1/1       Running   0          38s
+activemq-artemis-d9997cbcb-26jsb   1/1       Running   1          1d
+publisher-123-s7k64                1/1       Running   0          28s
+subscriber1-36-l925f               1/1       Running   0          27s
+subscriber2-25-h5244               1/1       Running   0          26s
+subscriber2-25-scjq7               1/1       Running   0          26s
 
- 
 # check the logs on the publisher
-$ oc logs publisher-114-mbz8g
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=publisher-114-mbz8g
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=publisher-114-mbz8g
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=publisher-114-mbz8g
-INFO[0003] published msg 'message #1 (2018-06-08 10:04:16)' to address 'fabric8.foo'  id=publisher-114-mbz8g
-INFO[0006] published msg 'message #2 (2018-06-08 10:04:19)' to address 'fabric8.foo'  id=publisher-114-mbz8g
-INFO[0009] published msg 'message #3 (2018-06-08 10:04:22)' to address 'fabric8.foo'  id=publisher-114-mbz8g
-INFO[0012] published msg 'message #4 (2018-06-08 10:04:25)' to address 'fabric8.foo'  id=publisher-114-mbz8g
-INFO[0015] published msg 'message #5 (2018-06-08 10:04:28)' to address 'fabric8.foo'  id=publisher-114-mbz8g
+$ oc logs publisher-123-s7k64
+INFO[0000] opened connection to `activemq-artemis:61616` and initialized sender to `fabric8.foo`  id=publisher-123-s7k64
+INFO[0003] sent message `message #1 (2018-06-13 09:46:56)`  id=publisher-123-s7k64
+INFO[0006] sent message `message #2 (2018-06-13 09:46:59)`  id=publisher-123-s7k64
+INFO[0009] sent message `message #3 (2018-06-13 09:47:02)`  id=publisher-123-s7k64
+INFO[0012] sent message `message #4 (2018-06-13 09:47:05)`  id=publisher-123-s7k64
+INFO[0015] sent message `message #5 (2018-06-13 09:47:08)`  id=publisher-123-s7k64
 ...
 ^C
 
 # check the logs on subscriber 1
-$ oc logs subscriber1-28-4p4s9
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber1-28-4p4s9
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber1-28-4p4s9
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber1-28-4p4s9
-INFO[0000] initialized receiver on 'fabric8.foo::queue1'  id=subscriber1-28-4p4s9
-INFO[0026] received msg: message #1 (2018-06-08 10:04:16)  id=subscriber1-28-4p4s9
-INFO[0029] received msg: message #2 (2018-06-08 10:04:19)  id=subscriber1-28-4p4s9
-INFO[0032] received msg: message #3 (2018-06-08 10:04:22)  id=subscriber1-28-4p4s9
-INFO[0035] received msg: message #4 (2018-06-08 10:04:25)  id=subscriber1-28-4p4s9
-INFO[0038] received msg: message #5 (2018-06-08 10:04:28)  id=subscriber1-28-4p4s9
+$ oc logs subscriber1-36-l925f
+INFO[0000] opened connection to `activemq-artemis:61616` and initialized receiver to `fabric8.foo::queue1`  id=subscriber1-36-l925f
+INFO[0001] received msg: message #1 (2018-06-13 09:46:56)  id=subscriber1-36-l925f
+INFO[0004] received msg: message #2 (2018-06-13 09:46:59)  id=subscriber1-36-l925f
+INFO[0007] received msg: message #3 (2018-06-13 09:47:02)  id=subscriber1-36-l925f
+INFO[0010] received msg: message #4 (2018-06-13 09:47:05)  id=subscriber1-36-l925f
+INFO[0013] received msg: message #5 (2018-06-13 09:47:08)  id=subscriber1-36-l925f
 ...
 ^C
 
 # check the logs on subscriber 2.1
-$ oc logs subscriber2-20-5tg9c
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber2-20-5tg9c
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber2-20-5tg9c
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber2-20-5tg9c
-INFO[0000] initialized receiver on 'fabric8.foo::queue2'  id=subscriber2-20-5tg9c
-INFO[0035] received msg: message #1 (2018-06-08 10:04:16)  id=subscriber2-20-5tg9c
-INFO[0041] received msg: message #3 (2018-06-08 10:04:22)  id=subscriber2-20-5tg9c
-INFO[0047] received msg: message #5 (2018-06-08 10:04:28)  id=subscriber2-20-5tg9c
+$ oc logs subscriber2-25-h5244
+INFO[0000] opened connection to `activemq-artemis:61616` and initialized receiver to `fabric8.foo::queue2`  id=subscriber2-25-h5244
+INFO[0000] received msg: message #1 (2018-06-13 09:46:56)  id=subscriber2-25-h5244
+INFO[0006] received msg: message #3 (2018-06-13 09:47:02)  id=subscriber2-25-h5244
+INFO[0012] received msg: message #5 (2018-06-13 09:47:08)  id=subscriber2-25-h5244
 ...
 ^C
 
 # check the logs on subscriber 2.2
-$ oc logs subscriber2-20-zv54m
-INFO[0000] opening connection to broker on 'amqp://activemq-artemis:61616'...  id=subscriber2-20-zv54m
-INFO[0000] connection established with server at 'amqp://activemq-artemis:61616'  id=subscriber2-20-zv54m
-INFO[0000] obtained a new session at 'amqp://activemq-artemis:61616'  id=subscriber2-20-zv54m
-INFO[0000] initialized receiver on 'fabric8.foo::queue2'  id=subscriber2-20-zv54m
-INFO[0038] received msg: message #2 (2018-06-08 10:04:19)  id=subscriber2-20-zv54m
-INFO[0044] received msg: message #4 (2018-06-08 10:04:25)  id=subscriber2-20-zv54m
+$ oc logs subscriber2-25-scjq7
+INFO[0000] opened connection to `activemq-artemis:61616` and initialized receiver to `fabric8.foo::queue2`  id=subscriber2-25-scjq7
+INFO[0003] received msg: message #2 (2018-06-13 09:46:59)  id=subscriber2-25-scjq7
+INFO[0009] received msg: message #4 (2018-06-13 09:47:05)  id=subscriber2-25-scjq7
 ...
 ^C
 ```

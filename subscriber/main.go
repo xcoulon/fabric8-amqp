@@ -1,13 +1,9 @@
 package main
 
 import (
-	"context"
-
-	"pack.ag/amqp"
-
-	"github.com/fabric8-services/fabric8-amqp/client"
 	"github.com/fabric8-services/fabric8-amqp/configuration"
 	"github.com/fabric8-services/fabric8-amqp/log"
+	"qpid.apache.org/electron"
 )
 
 func main() {
@@ -15,25 +11,26 @@ func main() {
 	// loads the configuration
 	config := configuration.New()
 
-	ctx := context.Background()
-	session, err := client.NewAMQPSession(config)
+	// message channel with enough capacity to handle a disconnection (hopefully...)
+	container := electron.NewContainer(config.GetPodName())
+	c, err := container.Dial("tcp", config.GetBrokerURL())
 	if err != nil {
 		log.Fatalf("failed to connect to '%s': %v", config.GetBrokerURL(), err.Error())
 	}
-	defer session.Close(ctx)
-
-	receiver, err := session.NewReceiver(amqp.LinkAddress(config.GetQueueName()))
+	defer c.Close(nil)
+	r, err := c.Receiver(electron.Source(config.GetQueueName()))
+	log.Infof("opened connection to `%s` and initialized receiver to `%s`", config.GetBrokerURL(), config.GetQueueName())
 	if err != nil {
-		log.Fatalf("failed to create receiver: %v", err)
+		log.Fatalf("failed to initialize the received to '%s' on : %v", config.GetQueueName(), config.GetBrokerURL(), err.Error())
 	}
-	log.Infof("initialized receiver on '%s'", config.GetQueueName())
 
 	for {
-		msg, err := receiver.Receive(ctx)
+		msg, err := r.Receive()
 		if err != nil {
-			log.Errorf("failed to receive msg: %v", err.Error())
+			log.Fatalf("failed to receive msg: %v", err.Error())
 		} else {
-			log.Infof("received msg: %v", string(msg.GetData()))
+			log.Infof("received msg: %v", msg.Message.Body())
+			msg.Accept()
 		}
 	}
 }

@@ -73,42 +73,37 @@ deploy-activemq-artemis: ## builds and deploy the ActiveMQ Artemis service on Mi
 
 .PHONY: build-publisher
 build-publisher: clean-artifacts ## builds the publisher Docker image
-	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -o $(BUILD_DIR)/publisher publisher/*.go
 	eval $$(minishift docker-env) && docker build -t fabric8-publisher:latest \
-	  --build-arg BIN_DIR=$(BUILD_DIR) --build-arg BIN_NAME=publisher \
+	  --build-arg BIN_NAME=publisher \
 	  -f publisher/Dockerfile .
 
-.PHONY: deploy-publisher
-deploy-publisher: build-publisher ## builds and deploy the publisher service on Minishift
+.PHONY: push-publisher
+push-publisher: build-publisher ## builds and deploys the publisher service (does not update the DC)
 	eval $$(minishift docker-env) && \
 	docker login -u developer -p $(shell oc whoami -t) $(shell minishift openshift registry) && \
 	docker tag fabric8-publisher:latest $(MINISHIFT_REGISTRY)/$(MINISHIFT_PROJECT)/publisher:latest && \
-	docker push $(MINISHIFT_REGISTRY)/$(MINISHIFT_PROJECT)/publisher:latest && \
+	docker push $(MINISHIFT_REGISTRY)/$(MINISHIFT_PROJECT)/publisher:latest
+
+.PHONY: apply-publisher-dc
+apply-publisher-dc: ## applies changes in the publisher deployment config
 	oc apply -f openshift/publisher.yaml
 
 .PHONY: build-subscriber
 build-subscriber: clean-artifacts ## builds the subscriber Docker image
-	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -o $(BUILD_DIR)/subscriber subscriber/*.go
 	eval $$(minishift docker-env) && docker build -t fabric8-subscriber:latest \
-	  --build-arg BIN_DIR=$(BUILD_DIR) --build-arg BIN_NAME=subscriber \
+	  --build-arg BIN_NAME=subscriber \
 	  -f subscriber/Dockerfile .
-	
 
-
-.PHONY: deploy-subscribers
-deploy-subscribers: build-subscriber ## builds and deploy the subscriber service 1 on Minishift
+.PHONY: push-subscriber
+push-subscriber: build-subscriber ## builds and deploys the publisher service (does not update the DC)
 	eval $$(minishift docker-env) && \
 	docker login -u developer -p $(shell oc whoami -t) $(shell minishift openshift registry) && \
 	docker tag fabric8-subscriber:latest $(MINISHIFT_REGISTRY)/$(MINISHIFT_PROJECT)/subscriber:latest && \
-	docker push $(MINISHIFT_REGISTRY)/$(MINISHIFT_PROJECT)/subscriber:latest 
-	
+	docker push $(MINISHIFT_REGISTRY)/$(MINISHIFT_PROJECT)/subscriber:latest
 
 .PHONY: clean-minishift
 clean-minishift: minishift-login ## removes the fabric8 project on Minishift
 	oc project fabric8 && oc delete project fabric8
-
-
-
 
 .PHONY: help
 help: ## Prints this help

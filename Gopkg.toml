@@ -24,6 +24,14 @@
 #   go-tests = true
 #   unused-packages = true
 
+required = [
+  "qpid.apache.org/amqp",
+  "qpid.apache.org/electron",
+]
+[[constraint]]
+  name="github.com/apache/qpid-proton"
+  version="0.23.0"
+
 
 [prune]
   go-tests = true

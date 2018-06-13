@@ -13,14 +13,13 @@ spec:
     metadata:
       labels:
         app: publisher
-        type: "streaming"
     spec:
       containers:
       - name: publisher
         image: "publisher:latest"
         env:
         - name: BROKER_URL
-          value: "amqp://activemq-artemis:61616"
+          value: "activemq-artemis:61616"
         - name: USERNAME
           value: "admin"
         - name: PASSWORD
