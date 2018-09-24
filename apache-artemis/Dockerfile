@@ -3,14 +3,14 @@ FROM openjdk:9
 LABEL maintainer="xcoulon@redhat.com"
 LABEL product="Apache Active MQ Artemis server"
 
-ENV ARTEMIS_VERSION=2.6.0
+ENV ARTEMIS_VERSION=2.6.3
 LABEL version="${VERSION}"
 
 # see install docs in http://activemq.apache.org/artemis/docs/latest/using-server.html
 # install the Apache ActiveMQ Artemis at the root 
 WORKDIR /
 ENV ARTEMIS_HOME=/var/lib/apache-artemis
-RUN wget -v http://mirrors.ircam.fr/pub/apache/activemq/activemq-artemis/${ARTEMIS_VERSION}/apache-artemis-${ARTEMIS_VERSION}-bin.tar.gz && \
+RUN curl -J -L --globoff "https://www.apache.org/dyn/closer.cgi?filename=activemq/activemq-artemis/${ARTEMIS_VERSION}/apache-artemis-${ARTEMIS_VERSION}-bin.tar.gz&action=download" --output apache-artemis-${ARTEMIS_VERSION}-bin.tar.gz && \
     tar zxvf apache-artemis-${ARTEMIS_VERSION}-bin.tar.gz && \
     mv /apache-artemis-${ARTEMIS_VERSION} ${ARTEMIS_HOME}
 
