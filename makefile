@@ -2,6 +2,7 @@ MINISHIFT_PROJECT = fabric8
 VENDOR_DIR=vendor
 LDFLAGS := -w
 BUILD_DIR = bin
+ARTEMIS_VERSION=2.6.3
 MINISHIFT_REGISTRY := $(shell minishift openshift registry)
 IMAGE_TAG ?= $(shell git rev-parse HEAD)
 GITUNTRACKEDCHANGES := $(shell git status --porcelain --untracked-files=no)
@@ -61,12 +62,12 @@ clean-artifacts:
 .PHONY: deploy-activemq-artemis
 deploy-activemq-artemis: ## builds and deploy the ActiveMQ Artemis service on Minishift
 	eval $$(minishift docker-env) && \
-	docker build -t fabric8/activemq-artemis:2.6.0 -f apache-artemis/Dockerfile . && \
-	eval $$(minishift docker-env) && docker login -u developer -p $(shell oc whoami -t) $(shell minishift openshift registry) && \
-	docker tag fabric8/activemq-artemis:2.6.0  $(MINISHIFT_REGISTRY)/$(MINISHIFT_PROJECT)/activemq-artemis:2.6.0 && \
-	docker push $(MINISHIFT_REGISTRY)/$(MINISHIFT_PROJECT)/activemq-artemis:2.6.0 && \
+	docker build --build-arg ARTEMIS_VERSION=$(ARTEMIS_VERSION) -t fabric8/activemq-artemis:$(ARTEMIS_VERSION) -f apache-artemis/Dockerfile . && \
+	eval $$(minishift docker-env) && \
+	docker login -u developer -p $(shell oc whoami -t) $(shell minishift openshift registry) && \
+	docker tag fabric8/activemq-artemis:$(ARTEMIS_VERSION)  $(MINISHIFT_REGISTRY)/$(MINISHIFT_PROJECT)/activemq-artemis:$(ARTEMIS_VERSION) && \
+	docker push $(MINISHIFT_REGISTRY)/$(MINISHIFT_PROJECT)/activemq-artemis:$(ARTEMIS_VERSION) && \
 	oc apply -f openshift/activemq-artemis-deploy.yaml
-
 
 .PHONY: build-publisher
 build-publisher: clean-artifacts ## builds the publisher Docker image

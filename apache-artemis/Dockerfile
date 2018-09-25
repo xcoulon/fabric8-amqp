@@ -3,7 +3,7 @@ FROM openjdk:9
 LABEL maintainer="xcoulon@redhat.com"
 LABEL product="Apache Active MQ Artemis server"
 
-ENV ARTEMIS_VERSION=2.6.3
+ARG ARTEMIS_VERSION=2.6.3
 LABEL version="${VERSION}"
 
 # see install docs in http://activemq.apache.org/artemis/docs/latest/using-server.html
